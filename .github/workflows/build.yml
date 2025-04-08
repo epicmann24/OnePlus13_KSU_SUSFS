@@ -197,11 +197,9 @@ jobs:
           # Run perl command to modify UTS_VERSION
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT Sat Apr 20 04:20:00 UTC 2024"}' ./common/scripts/mkcompile_h
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT Sat Apr 20 04:20:00 UTC 2024"}' ./msm-kernel/scripts/mkcompile_h
-      - name: Workaround Bazel ddk_config Conflicts
-        run: |
-          cd "$CONFIG/kernel_platform"
-          sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' msm-kernel/kernel/kernel/oplus_cpu/game_opt/BUILD.bazel
-          sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' msm-kernel/kernel/kernel/oplus_cpu/freqqos_monitor/BUILD.bazel
+
+
+       
       - name: Build the Kernel
         run: |
           echo "Changing to configuration directory: $CONFIG..."
