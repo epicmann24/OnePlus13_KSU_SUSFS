@@ -202,21 +202,27 @@ jobs:
         run: |
           cd "$CONFIG/kernel_platform"
 
-          echo "Patching conflicting Bazel ddk_config rules..."
+          echo "Patching known conflicting ddk_config rules..."
 
-          # Patch game_opt
-          if [ -f msm-kernel/kernel/oplus_cpu/game_opt/BUILD.bazel ]; then
-            sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' msm-kernel/kernel/oplus_cpu/game_opt/BUILD.bazel
-          else
-            echo \"game_opt BUILD.bazel not found, skipping...\"
-          fi
+          # Define all conflicting BUILD.bazel paths
+          PATCH_PATHS=(
+            "msm-kernel/kernel/oplus_cpu/game_opt/BUILD.bazel"
+            "msm-kernel/kernel/oplus_cpu/freqqos_monitor/BUILD.bazel"
+            "msm-kernel/drivers/android/oplus_binder/BUILD.bazel"
+            "msm-kernel/drivers/input/oplus_secure_drivers/oplus_secure_common/BUILD.bazel"
+            "msm-kernel/drivers/soc/oplus/boot/oplus_phoenix/BUILD.bazel"
+            "msm-kernel/drivers/soc/oplus/dfr/BUILD.bazel"
+          )
 
-          # Patch freqqos_monitor
-          if [ -f msm-kernel/kernel/oplus_cpu/freqqos_monitor/BUILD.bazel ]; then
-            sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' msm-kernel/kernel/oplus_cpu/freqqos_monitor/BUILD.bazel
-          else
-            echo \"freqqos_monitor BUILD.bazel not found, skipping...\"
-          fi
+          # Comment out ddk_config blocks if files exist
+          for path in \"${PATCH_PATHS[@]}\"; do
+            if [ -f \"$path\" ]; then
+              echo \"Patching: $path\"
+              sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' \"$path\"
+            else
+              echo \"File not found, skipping: $path\"
+            fi
+          done
        
       - name: Build the Kernel
         run: |
