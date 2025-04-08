@@ -129,7 +129,7 @@ jobs:
     secrets: inherit
     with:
       model: "OP13"
-      soc: "sun"
+      soc: "sun perf"
       branch: "oneplus/sm8750"
       manifest: "JiuGeFaCai_oneplus_13_v.xml"
       android_version: "android15"
