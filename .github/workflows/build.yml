@@ -198,7 +198,25 @@ jobs:
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT Sat Apr 20 04:20:00 UTC 2024"}' ./common/scripts/mkcompile_h
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT Sat Apr 20 04:20:00 UTC 2024"}' ./msm-kernel/scripts/mkcompile_h
 
+      - name: Workaround Bazel ddk_config Conflicts
+        run: |
+          cd "$CONFIG/kernel_platform"
 
+          echo "Patching conflicting Bazel ddk_config rules..."
+
+          # Patch game_opt
+          if [ -f msm-kernel/kernel/oplus_cpu/game_opt/BUILD.bazel ]; then
+            sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' msm-kernel/kernel/oplus_cpu/game_opt/BUILD.bazel
+          else
+            echo \"game_opt BUILD.bazel not found, skipping...\"
+          fi
+
+          # Patch freqqos_monitor
+          if [ -f msm-kernel/kernel/oplus_cpu/freqqos_monitor/BUILD.bazel ]; then
+            sed -i '/ddk_config(/{N;N;N;N;s/^/#/}' msm-kernel/kernel/oplus_cpu/freqqos_monitor/BUILD.bazel
+          else
+            echo \"freqqos_monitor BUILD.bazel not found, skipping...\"
+          fi
        
       - name: Build the Kernel
         run: |
