@@ -95,11 +95,8 @@ jobs:
           curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -s next
           #cd ./KernelSU-Next/kernel
           #sed -i 's/ccflags-y += -DKSU_VERSION=16/ccflags-y += -DKSU_VERSION=12000/' ./Makefile
-          git submodule update --init --recursive
-          cd KernelSU-Next/kernel
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" Makefile
+          KSU_VERSION=$(cd ./KernelSU-Next/kernel && git describe --tags --abbrev=0)
+          echo "KSUVER=${KSU_VERSION}" >> $GITHUB_ENV
 
       - name: Apply SUSFS Patches
         run: |
@@ -112,7 +109,7 @@ jobs:
           cp ../../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cp ../../susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ../../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
-          
+
           cd ./KernelSU-Next
           
           echo "Applying next SUSFS patches..."
@@ -121,9 +118,6 @@ jobs:
           
           # Change to common directory and apply SUSFS patch
           cd ../common
-          if [ "${{ inputs.soc }}" == "sun" ]; then
-            sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace/hooks/fs.h>' ./fs/namespace.c
-          fi
           patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
 
       - name: Apply KSU Hooks
@@ -216,24 +210,19 @@ jobs:
           #git config --global user.name "TheWildJames"
           #git add *
           #git commit -s -a -m "getting rid of -dirty"
-          
-          BUILD_TYPE="gki"
-          if [ "${{ inputs.soc }}" == "sun" ]; then
-            BUILD_TYPE="perf"
-          fi
-          # sed -i '/cmdline = \[.*bazel_subcommand.*\]/s/\(bazel_subcommand\)/\1, "--jobs=4"/' ./kernel_platform/msm-kernel/build_with_bazel.py
-          # sed -i '/"\${ROOT_DIR}\/build_with_bazel.py"/i EXTRA_KBUILD_ARGS+=" --jobs=4"' ./kernel_platform/msm-kernel/build_with_bazel.py
-          # LTO=thin ./kernel_platform/oplus/build/oplus_build_kernel.sh ${{ inputs.soc }} $BUILD_TYPE
-          cd kernel_platform
-          ./tools/bazel query //...
-          cd ..
-          ./kernel_platform/build_with_bazel.py \
+          if [ -f ./kernel_platform/build_with_bazel.py ]; then
+            ./kernel_platform/build_with_bazel.py \
               -t ${{ inputs.soc }} \
-              $BUILD_TYPE \
+              gki \
               --jobs=$(nproc --all) \
               --verbose_failures \
-              --lto=thin \
+              --config=stamp \
+              --user_kmi_symbol_lists=//msm-kernel:android/abi_gki_aarch64_qcom \
+              --ignore_missing_projects \
               -o "$(pwd)/out"
+          else
+            ./kernel_platform/oplus/build/oplus_build_kernel.sh ${{ inputs.soc }} gki
+          fi
 
       - name: Copy Images
         run: |
